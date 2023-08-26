@@ -1,0 +1,50 @@
+name: Publish app
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.21
+
+      - name: Get packages
+        run: go mod download
+
+      - name: Build .exe
+        run: go build -o GoRelCli.exe GoRelCli
+
+      - name: Check files
+        run: ls
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.head_commit.message }}
+          release_name: Release ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
+
+      - name: Upload exe
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: GoRelCli.exe
+          asset_name: ${{github.event.head_commit.message}}.exe
+          asset_content_type: application/exe
