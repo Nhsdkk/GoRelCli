@@ -2,6 +2,8 @@
 
 ###### Cli for better golang object-relational mapper inspired by prisma and GORM.
 
+[![Publish app](https://github.com/Nhsdkk/GoRelCli/actions/workflows/publish.yml/badge.svg?branch=master)](https://github.com/Nhsdkk/GoRelCli/actions/workflows/publish.yml)
+
 ### What does it do?
 
 ---
@@ -99,7 +101,7 @@ Let's dive into some details:
   ./FOLDER_WHERE_EXECUTABLE_EXISTS/GoRelCli.exe migrate --path="./FOLDER_WHERE_GOREL_SCHEMA_EXISTS/gorel_schema.yml"
    ```
 
-### How to run generator
+### How to run generator (coming soon...)
 
 ---
 1. Download latest executable from GitHub
