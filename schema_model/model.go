@@ -24,7 +24,7 @@ type Property struct {
 }
 
 func (p *Property) GetPostgresType() (postgresType string, isValidPostgresType bool) {
-	typed := propertyType(p.Type)
+	typed := PropertyType(p.Type)
 	postgresType = postgresTypes[typed]
 	if postgresType == "" {
 		return p.Type, false
@@ -33,12 +33,19 @@ func (p *Property) GetPostgresType() (postgresType string, isValidPostgresType b
 }
 
 func (p *Property) ValidateDefaultValue() (any, error) {
-	typed := propertyType(p.Type)
+	typed := PropertyType(p.Type)
+
 	switch typed {
 	case Int:
+		if p.Default == "autoincrement()" {
+			return nil, nil
+		}
 		val, err := strconv.ParseInt(p.Default, 10, 64)
 		return val, err
 	case String:
+		if p.Default == "uuid()" {
+			return nil, nil
+		}
 		return p.Default, nil
 	case Float:
 		val, err := strconv.ParseFloat(p.Default, 64)
@@ -47,16 +54,19 @@ func (p *Property) ValidateDefaultValue() (any, error) {
 		val, err := strconv.ParseBool(p.Default)
 		return val, err
 	case DateTime:
+		if p.Default == "now()" {
+			return nil, nil
+		}
 		return nil, errors.New("can't use dateTime default value if it's not now()")
 	default:
 		return nil, errors.New(fmt.Sprintf("can't use variable of type %s as default value", typed))
 	}
 }
 
-type propertyType string
+type PropertyType string
 
 const (
-	Int              propertyType = "int"
+	Int              PropertyType = "int"
 	Boolean                       = "boolean"
 	Float                         = "float"
 	String                        = "string"
@@ -74,7 +84,7 @@ const (
 )
 
 var (
-	postgresTypes = map[propertyType]string{
+	postgresTypes = map[PropertyType]string{
 		Int:              "int NOT NULL",
 		Boolean:          "boolean NOT NULL",
 		Float:            "double precision NOT NULL",
@@ -91,7 +101,7 @@ var (
 		StringNullable:   "text",
 		DateTimeNullable: "timestamptz",
 	}
-	goTypes = map[propertyType]reflect.Type{
+	goTypes = map[PropertyType]reflect.Type{
 		Int:      reflect.TypeOf(1),
 		Boolean:  reflect.TypeOf(true),
 		Float:    reflect.TypeOf(1.2),
