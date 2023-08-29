@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../GoRelCli/.idea/GoRelCli.iml" filepath="$PROJECT_DIR$/../GoRelCli/.idea/GoRelCli.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/GoRelCli.iml" filepath="$PROJECT_DIR$/.idea/GoRelCli.iml" />
     </modules>
   </component>
 </project>

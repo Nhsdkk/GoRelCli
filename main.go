@@ -2,7 +2,6 @@ package main
 
 import (
 	"GoRelCli/generate"
-	"GoRelCli/logger"
 	"GoRelCli/migrate"
 	"flag"
 	"fmt"
@@ -44,11 +43,11 @@ func getHandler(args []string) func() error {
 	switch args[0] {
 	case "migrate":
 		return func() error {
-			return logger.LogStep("GoRel migrate", func() error { return migrate.Migrate(path, output) })
+			return migrate.Migrate(path, output)
 		}
 	case "generate":
 		return func() error {
-			return logger.LogStep("GoRel generate", func() error { return generate.Generate(path, output) })
+			return generate.Generate(path, output)
 		}
 	default:
 		fmt.Println(fmt.Sprintf("Command with name '%s' not found", args[0]))
