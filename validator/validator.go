@@ -1,4 +1,4 @@
-package vaidator
+package validator
 
 import (
 	"GoRelCli/schema_model"
