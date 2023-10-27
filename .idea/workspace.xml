@@ -5,9 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c009361c-369c-4942-8809-11fd6fc5e3d9" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/generate/GoRelGeneratedFileImpl.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/generate/GoRelGeneratedFileInterface.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrate/migrate.go" beforeDir="false" afterPath="$PROJECT_DIR$/migrate/migrate.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vaidator/validator.go" beforeDir="false" afterPath="$PROJECT_DIR$/validator/validator.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/generate/generate.go" beforeDir="false" afterPath="$PROJECT_DIR$/generate/generate.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gorel/gorel_schema.yml" beforeDir="false" afterPath="$PROJECT_DIR$/gorel/gorel_schema.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logger/logger.go" beforeDir="false" afterPath="$PROJECT_DIR$/logger/logger.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/schema_model/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/schema_model/model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/validator/validator.go" beforeDir="false" afterPath="$PROJECT_DIR$/validator/validator.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,6 +33,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -52,24 +61,41 @@
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/nikit",
+    "last_opened_file_path": "C:/Users/Anton/GolandProjects/GoRelCli",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "run.code.analysis.last.selected.profile": "pProject Default",
     "settings.editor.selected.configurable": "go.sdk"
   }
 }]]></component>
-  <component name="RunManager">
-    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Anton\GolandProjects\GoRelCli" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go Build.Gorel Generate">
+    <configuration name="Gorel Generate" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="GoRelCli" />
       <working_directory value="$PROJECT_DIR$" />
+      <parameters value="generate --path=&quot;./gorel/gorel_schema.yml&quot; --project_path=&quot;./&quot;" />
+      <EXTENSION ID="net.ashald.envfile">
+        <option name="IS_ENABLED" value="false" />
+        <option name="IS_SUBST" value="false" />
+        <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+        <option name="IS_IGNORE_MISSING_FILES" value="false" />
+        <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+        <ENTRIES>
+          <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+        </ENTRIES>
+      </EXTENSION>
       <kind value="PACKAGE" />
       <package value="GoRelCli" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
-    <configuration name="go build GoRelCli" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <configuration name="Gorel Migrate" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="GoRelCli" />
       <working_directory value="$PROJECT_DIR$" />
       <parameters value="migrate --path=&quot;./gorel/gorel_schema.yml&quot;" />
@@ -83,6 +109,15 @@
           <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
         </ENTRIES>
       </EXTENSION>
+      <kind value="PACKAGE" />
+      <package value="GoRelCli" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
+      <module name="GoRelCli" />
+      <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
       <package value="GoRelCli" />
       <directory value="$PROJECT_DIR$" />
@@ -119,6 +154,11 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Go Build.go build GoRelCli" />
+      <item itemvalue="Go Build.Gorel Generate" />
+      <item itemvalue="Go Build.Gorel Migrate" />
+    </list>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">

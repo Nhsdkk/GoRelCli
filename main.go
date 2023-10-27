@@ -17,7 +17,7 @@ func listAvailableCommands() {
 func getFlags(args []string) (path string, output string) {
 	fs := flag.FlagSet{}
 	pathPtr := fs.String("path", "", "Path to GoRelCli schema file")
-	outputPtr := fs.String("output", "", "Path to folder where generated files will be located")
+	outputPtr := fs.String("project_path", "", "Path to folder where generated files will be located")
 	if err := fs.Parse(args); err != nil {
 		fmt.Println("Error while parsing flags")
 		os.Exit(3)

@@ -2,11 +2,51 @@ package validator
 
 import (
 	"GoRelCli/schema_model"
+	"GoRelCli/schema_parser"
 	"errors"
 	"fmt"
 	"slices"
 	"strings"
 )
+
+// CapitalEnd ASCII character index for end of capital letters
+const CapitalEnd = 122
+
+// CapitalStart ASCII character index for start of capital letters
+const CapitalStart = 97
+
+// LowercaseEnd ASCII character index for end of lowercase letters
+const LowercaseEnd = 90
+
+// LowercaseStart ASCII character index for start of lowercase letters
+const LowercaseStart = 65
+
+// UNDERSCORE ASCII character index for underscore character
+const UNDERSCORE = 95
+
+// MINUS ASCII character index for minus character
+const MINUS = 45
+
+func checkNameForSpecialCharacter(name string) bool {
+	for _, charIndex := range name {
+		if charIndex == UNDERSCORE || charIndex == MINUS {
+			continue
+		}
+
+		if (charIndex >= CapitalStart && charIndex <= CapitalEnd) || (charIndex >= LowercaseStart && charIndex <= LowercaseEnd) {
+			continue
+		}
+
+		return false
+	}
+	return true
+}
+
+func replaceSpecialCharacters(str string) string {
+	str = strings.Replace(str, "\"", "\\\"", -1)
+	str = strings.Replace(str, "'", "\\'", -1)
+	return str
+}
 
 func cleanupNames(schema *schema_model.GoRelSchema) (newEnumNames []string, newModelNames []string) {
 	enumMap := make(map[string]string)
@@ -15,8 +55,7 @@ func cleanupNames(schema *schema_model.GoRelSchema) (newEnumNames []string, newM
 		oldEnumName := enum.Name
 		newEnumName := enum.Name
 
-		newEnumName = strings.Replace(newEnumName, "\"", "\\\"", -1)
-		newEnumName = strings.Replace(newEnumName, "'", "\\'", -1)
+		newEnumName = replaceSpecialCharacters(newEnumName)
 
 		schema.Enums[index].Name = newEnumName
 
@@ -38,8 +77,7 @@ func cleanupNames(schema *schema_model.GoRelSchema) (newEnumNames []string, newM
 		oldModelName := model.Name
 		newModelName := model.Name
 
-		newModelName = strings.Replace(newModelName, "\"", "\\\"", -1)
-		newModelName = strings.Replace(newModelName, "'", "\\'", -1)
+		newModelName = replaceSpecialCharacters(newModelName)
 		schema.Models[index].Name = newModelName
 
 		modelMap[oldModelName] = newModelName
@@ -62,8 +100,7 @@ func cleanupNames(schema *schema_model.GoRelSchema) (newEnumNames []string, newM
 func cleanupEnumValues(schema *schema_model.GoRelSchema) {
 	for index, enum := range schema.Enums {
 		for indexV, value := range enum.Values {
-			schema.Enums[index].Values[indexV] = strings.Replace(value, "\"", "\\\"", -1)
-			schema.Enums[index].Values[indexV] = strings.Replace(value, "\\'", "\\'", -1)
+			schema.Enums[index].Values[indexV] = replaceSpecialCharacters(value)
 		}
 	}
 }
@@ -107,6 +144,10 @@ func validateEnums(schema schema_model.GoRelSchema) error {
 			return errors.New("enum name is empty")
 		}
 
+		if !checkNameForSpecialCharacter(enum.Name) {
+			return errors.New(fmt.Sprintf("enum with name %s has special characters in it", enum.Name))
+		}
+
 		if hasLessThanTwoValues {
 			return errors.New(fmt.Sprintf("enum with name %s has less than 2 values (%v values)", enum.Name, len(enum.Values)))
 		}
@@ -134,6 +175,10 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 
 		if isNameEmpty {
 			return errors.New("model name is empty")
+		}
+
+		if !checkNameForSpecialCharacter(model.Name) {
+			return errors.New(fmt.Sprintf("model with name %s has special characters in it", model.Name))
 		}
 
 		if hasLessThanTwoProperties {
@@ -229,8 +274,9 @@ func validateRelations(schema schema_model.GoRelSchema, modelNames []string) err
 }
 
 func ValidateSchema(schema *schema_model.GoRelSchema) (enumNames []string, modelNames []string, err error) {
-	enumNames, modelNames = cleanupNames(schema)
-	cleanupEnumValues(schema)
+	//enumNames, modelNames = cleanupNames(schema)
+	//cleanupEnumValues(schema)
+	enumNames, modelNames = schema_parser.IndexSchema(*schema)
 	if err := validateEnums(*schema); err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("error while validating enums:\n%s", err))
 	}

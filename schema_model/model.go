@@ -3,9 +3,7 @@ package schema_model
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
-	"time"
 )
 
 type Model struct {
@@ -30,6 +28,15 @@ func (p *Property) GetPostgresType() (postgresType string, isValidPostgresType b
 		return p.Type, false
 	}
 	return postgresType, true
+}
+
+func (p *Property) GetGoLangType() (goType string, isValidGoType bool) {
+	typed := PropertyType(p.Type)
+	goType = goTypes[typed]
+	if goType == "" {
+		return p.Type, false
+	}
+	return goType, true
 }
 
 func (p *Property) ValidateDefaultValue() (any, error) {
@@ -101,16 +108,21 @@ var (
 		StringNullable:   "text",
 		DateTimeNullable: "timestamptz",
 	}
-	goTypes = map[PropertyType]reflect.Type{
-		Int:      reflect.TypeOf(1),
-		Boolean:  reflect.TypeOf(true),
-		Float:    reflect.TypeOf(1.2),
-		String:   reflect.TypeOf(" "),
-		DateTime: reflect.TypeOf(time.Now()),
-		//IntArr:           reflect.TypeOf([1,2]),
-		//BooleanArr:       reflect.TypeOf(),
-		//FloatArr:         reflect.TypeOf(),
-		//StringArr:        reflect.TypeOf(),
-		//DateTimeArr:      reflect.TypeOf(),
+	goTypes = map[PropertyType]string{
+		Int:              "int64",
+		Boolean:          "bool",
+		Float:            "float64",
+		String:           "string",
+		DateTime:         "time",
+		IntArr:           "[]int",
+		BooleanArr:       "[]boolean",
+		FloatArr:         "[]float",
+		StringArr:        "[]string",
+		DateTimeArr:      "[]time",
+		IntNullable:      "int64",
+		BooleanNullable:  "bool",
+		FloatNullable:    "float64",
+		StringNullable:   "string",
+		DateTimeNullable: "time",
 	}
 )
