@@ -49,11 +49,17 @@ func (g *GoRelGeneratedFileImpl) Create(object ObjectUnionType, enumNames []stri
 	return nil
 }
 
-func (g *GoRelGeneratedFileImpl) WriteFS() error {
+func (g *GoRelGeneratedFileImpl) WriteFS() (err error) {
 	file, err := os.OpenFile(g.absolutePath, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
+
+	defer func(file *os.File) {
+		if errInn := file.Close(); errInn != nil {
+			err = errInn
+		}
+	}(file)
 
 	byteRepr := []byte(g.content)
 	n, err := file.Write(byteRepr)
@@ -64,7 +70,7 @@ func (g *GoRelGeneratedFileImpl) WriteFS() error {
 	if n != len(byteRepr) {
 		return errors.New(fmt.Sprintf("wrote %d bytes, but content length is %d", n, len(byteRepr)))
 	}
-	return nil
+	return err
 }
 
 func (g *GoRelGeneratedFileImpl) Log() {

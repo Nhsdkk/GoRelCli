@@ -107,5 +107,5 @@ Let's dive into some details:
 1. Download latest executable from GitHub
 2. Run command in command line
   ```bash
-  ./FOLDER_WHERE_EXECUTABLE_EXISTS/GoRelCli.exe generate --path="./FOLDER_WHERE_GOREL_SCHEMA_EXISTS/gorel_schema.yml" --output="./gorel/generated"
+  ./FOLDER_WHERE_EXECUTABLE_EXISTS/GoRelCli.exe generate --path="./FOLDER_WHERE_GOREL_SCHEMA_EXISTS/gorel_schema.yml" --project_path="./ROOT_PROJECT_FOLDER"
    ```
