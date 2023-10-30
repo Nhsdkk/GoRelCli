@@ -5,7 +5,7 @@ import (
 	"GoRelCli/migrate/database_contoller"
 	"GoRelCli/schema_model"
 	"GoRelCli/schema_parser"
-	"GoRelCli/vaidator"
+	"GoRelCli/validator"
 	"bufio"
 	"database/sql"
 	"errors"
@@ -62,7 +62,7 @@ func Migrate(args ...string) error {
 	var enumNames []string
 
 	if err := logger.LogStep("validate schema", func() error {
-		enumNamesInn, modelNamesInn, err := vaidator.ValidateSchema(&goRelSchema)
+		enumNamesInn, modelNamesInn, err := validator.ValidateSchema(&goRelSchema)
 		if err != nil {
 			return err
 		}

@@ -1,72 +1,141 @@
-package vaidator
+package validator
 
 import (
 	"GoRelCli/schema_model"
+	"GoRelCli/schema_parser"
 	"errors"
 	"fmt"
 	"slices"
 	"strings"
 )
 
-func cleanupNames(schema *schema_model.GoRelSchema) (newEnumNames []string, newModelNames []string) {
-	enumMap := make(map[string]string)
+// CharactersEnd ASCII character index for end of letters
+const CharactersEnd = 127
 
-	for index, enum := range schema.Enums {
-		oldEnumName := enum.Name
-		newEnumName := enum.Name
+// CharactersStart ASCII character index for start of letters
+const CharactersStart = 33
 
-		newEnumName = strings.Replace(newEnumName, "\"", "\\\"", -1)
-		newEnumName = strings.Replace(newEnumName, "'", "\\'", -1)
+// CapitalEnd ASCII character index for end of capital letters
+const CapitalEnd = 122
 
-		schema.Enums[index].Name = newEnumName
+// CapitalStart ASCII character index for start of capital letters
+const CapitalStart = 97
 
-		enumMap[oldEnumName] = newEnumName
-		newEnumNames = append(newEnumNames, schema.Enums[index].Name)
-	}
+// LowercaseEnd ASCII character index for end of lowercase letters
+const LowercaseEnd = 90
 
-	modelMap := make(map[string]string)
+// LowercaseStart ASCII character index for start of lowercase letters
+const LowercaseStart = 65
 
-	//TODO: format reference and relational fields
-	for index, model := range schema.Models {
-		for indexP, property := range model.Properties {
-			newEnumName := enumMap[property.Type]
-			if newEnumName != "" {
-				schema.Models[index].Properties[indexP].Name = newEnumName
-			}
+// UNDERSCORE ASCII character index for underscore character
+const UNDERSCORE = 95
+
+// MINUS ASCII character index for minus character
+const MINUS = 45
+
+func checkNameForSpecialCharacter(name string) bool {
+	for _, charIndex := range name {
+		if charIndex == UNDERSCORE || charIndex == MINUS {
+			continue
 		}
 
-		oldModelName := model.Name
-		newModelName := model.Name
-
-		newModelName = strings.Replace(newModelName, "\"", "\\\"", -1)
-		newModelName = strings.Replace(newModelName, "'", "\\'", -1)
-		schema.Models[index].Name = newModelName
-
-		modelMap[oldModelName] = newModelName
-		modelMap[oldModelName+"[]"] = newModelName + "[]"
-		newModelNames = append(newModelNames, schema.Models[index].Name)
-	}
-
-	for index, model := range schema.Models {
-		for indexP, property := range model.Properties {
-			newType := modelMap[property.Type]
-			if newType != "" {
-				schema.Models[index].Properties[indexP].Type = newType
-			}
+		if (charIndex >= CapitalStart && charIndex <= CapitalEnd) || (charIndex >= LowercaseStart && charIndex <= LowercaseEnd) {
+			continue
 		}
-	}
 
-	return
+		return true
+	}
+	return false
 }
 
-func cleanupEnumValues(schema *schema_model.GoRelSchema) {
+func replaceSpecialCharacters(str string) string {
+	str = strings.Replace(str, "\"", "\\\"", -1)
+	str = strings.Replace(str, "'", "\\'", -1)
+	return str
+}
+
+func cleanupName(name string) string {
+	runeName := []rune(name)
+	for characterIndexInWord, charIndex := range runeName {
+		allowedSpecialCharacters := charIndex == UNDERSCORE || charIndex == MINUS
+		chars := (charIndex >= CapitalStart && charIndex <= CapitalEnd) || (charIndex >= LowercaseStart && charIndex <= LowercaseEnd)
+		allowedRange := charIndex >= CharactersStart && charIndex <= CharactersStart
+		if allowedRange && !(allowedSpecialCharacters || chars) {
+			runeName[characterIndexInWord] = []rune("")[0]
+		}
+	}
+	return string(runeName)
+}
+
+func CleanupNames(schema *schema_model.GoRelSchema) {
 	for index, enum := range schema.Enums {
-		for indexV, value := range enum.Values {
-			schema.Enums[index].Values[indexV] = strings.Replace(value, "\"", "\\\"", -1)
-			schema.Enums[index].Values[indexV] = strings.Replace(value, "\\'", "\\'", -1)
+		if checkNameForSpecialCharacter(enum.Name) {
+			schema.Enums[index].Name = cleanupName(enum.Name)
+		}
+	}
+	for index, model := range schema.Models {
+		if checkNameForSpecialCharacter(model.Name) {
+			schema.Models[index].Name = cleanupName(model.Name)
 		}
 	}
 }
+
+//func cleanupNames(schema *schema_model.GoRelSchema) (newEnumNames []string, newModelNames []string) {
+//	enumMap := make(map[string]string)
+//
+//	for index, enum := range schema.Enums {
+//		oldEnumName := enum.Name
+//		newEnumName := enum.Name
+//
+//		newEnumName = replaceSpecialCharacters(newEnumName)
+//
+//		schema.Enums[index].Name = newEnumName
+//
+//		enumMap[oldEnumName] = newEnumName
+//		newEnumNames = append(newEnumNames, schema.Enums[index].Name)
+//	}
+//
+//	modelMap := make(map[string]string)
+//
+//	//TODO: format reference and relational fields
+//	for index, model := range schema.Models {
+//		for indexP, property := range model.Properties {
+//			newEnumName := enumMap[property.Type]
+//			if newEnumName != "" {
+//				schema.Models[index].Properties[indexP].Name = newEnumName
+//			}
+//		}
+//
+//		oldModelName := model.Name
+//		newModelName := model.Name
+//
+//		newModelName = replaceSpecialCharacters(newModelName)
+//		schema.Models[index].Name = newModelName
+//
+//		modelMap[oldModelName] = newModelName
+//		modelMap[oldModelName+"[]"] = newModelName + "[]"
+//		newModelNames = append(newModelNames, schema.Models[index].Name)
+//	}
+//
+//	for index, model := range schema.Models {
+//		for indexP, property := range model.Properties {
+//			newType := modelMap[property.Type]
+//			if newType != "" {
+//				schema.Models[index].Properties[indexP].Type = newType
+//			}
+//		}
+//	}
+//
+//	return
+//}
+//
+//func cleanupEnumValues(schema *schema_model.GoRelSchema) {
+//	for index, enum := range schema.Enums {
+//		for indexV, value := range enum.Values {
+//			schema.Enums[index].Values[indexV] = replaceSpecialCharacters(value)
+//		}
+//	}
+//}
 
 func validateType(property schema_model.Property, enumNames []string, modelNames []string, modelName string) error {
 	referenceNames := make([]string, len(modelNames))
@@ -107,6 +176,10 @@ func validateEnums(schema schema_model.GoRelSchema) error {
 			return errors.New("enum name is empty")
 		}
 
+		if !checkNameForSpecialCharacter(enum.Name) {
+			return errors.New(fmt.Sprintf("enum with name %s has special characters in it", enum.Name))
+		}
+
 		if hasLessThanTwoValues {
 			return errors.New(fmt.Sprintf("enum with name %s has less than 2 values (%v values)", enum.Name, len(enum.Values)))
 		}
@@ -134,6 +207,10 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 
 		if isNameEmpty {
 			return errors.New("model name is empty")
+		}
+
+		if checkNameForSpecialCharacter(model.Name) {
+			return errors.New(fmt.Sprintf("model with name %s has special characters in it", model.Name))
 		}
 
 		if hasLessThanTwoProperties {
@@ -229,8 +306,9 @@ func validateRelations(schema schema_model.GoRelSchema, modelNames []string) err
 }
 
 func ValidateSchema(schema *schema_model.GoRelSchema) (enumNames []string, modelNames []string, err error) {
-	enumNames, modelNames = cleanupNames(schema)
-	cleanupEnumValues(schema)
+	//enumNames, modelNames = cleanupNames(schema)
+	//cleanupEnumValues(schema)
+	enumNames, modelNames = schema_parser.IndexSchema(*schema)
 	if err := validateEnums(*schema); err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("error while validating enums:\n%s", err))
 	}

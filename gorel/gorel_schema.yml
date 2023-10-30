@@ -4,7 +4,7 @@ connection:
   url: "postgresql://postgres:POSTGRESPW@localhost:5432/postgres?sslmode=disable"
 
 models:
-  - name: Us"e'r
+  - name: User
     properties:
       - name: id
         type: int
@@ -34,7 +34,7 @@ models:
       - name: userId
         type: int
       - name: user
-        type: Us"e'r
+        type: User
         relationField: userId
         referenceField: id
 
