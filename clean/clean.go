@@ -24,7 +24,7 @@ func writeYmlFS(schema schema_model.GoRelSchema, path string) (err error) {
 		return err
 	}
 
-	file, err := os.OpenFile(absPath, os.O_CREATE|os.O_WRONLY, 0777)
+	file, err := os.OpenFile(absPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)
 	if err != nil {
 		return err
 	}
