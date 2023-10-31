@@ -8,7 +8,8 @@
 
 ---
 * Creates migrations using schema specified in YAML file
-* Generates structs using specified schema (Coming soon...)
+* Generates structs using specified schema
+* Cleans up the names inside schema to match the rules 
 
 ### How to specify schema?
 
@@ -101,11 +102,20 @@ Let's dive into some details:
   ./FOLDER_WHERE_EXECUTABLE_EXISTS/GoRelCli.exe migrate --path="./FOLDER_WHERE_GOREL_SCHEMA_EXISTS/gorel_schema.yml"
    ```
 
-### How to run generator (coming soon...)
+### How to run generator
 
 ---
 1. Download latest executable from GitHub
 2. Run command in command line
   ```bash
   ./FOLDER_WHERE_EXECUTABLE_EXISTS/GoRelCli.exe generate --path="./FOLDER_WHERE_GOREL_SCHEMA_EXISTS/gorel_schema.yml" --project_path="./ROOT_PROJECT_FOLDER"
+   ```
+
+### How to run clean
+
+---
+1. Download latest executable from GitHub
+2. Run command in command line
+  ```bash
+  ./FOLDER_WHERE_EXECUTABLE_EXISTS/GoRelCli.exe clean --path="./FOLDER_WHERE_GOREL_SCHEMA_EXISTS/gorel_schema.yml"
    ```

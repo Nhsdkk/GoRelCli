@@ -33,6 +33,15 @@ const UNDERSCORE = 95
 // MINUS ASCII character index for minus character
 const MINUS = 45
 
+// QuestionMark ASCII character index for questionMark
+const QuestionMark = 63
+
+// SquareBracketOpening ASCII character index for opening square bracket
+const SquareBracketOpening = 91
+
+// SquareBracketClosing ASCII character index for closing square bracket
+const SquareBracketClosing = 93
+
 func checkNameForSpecialCharacter(name string) bool {
 	for _, charIndex := range name {
 		if charIndex == UNDERSCORE || charIndex == MINUS {
@@ -54,28 +63,66 @@ func replaceSpecialCharacters(str string) string {
 	return str
 }
 
-func cleanupName(name string) string {
-	runeName := []rune(name)
-	for characterIndexInWord, charIndex := range runeName {
-		allowedSpecialCharacters := charIndex == UNDERSCORE || charIndex == MINUS
-		chars := (charIndex >= CapitalStart && charIndex <= CapitalEnd) || (charIndex >= LowercaseStart && charIndex <= LowercaseEnd)
-		allowedRange := charIndex >= CharactersStart && charIndex <= CharactersStart
-		if allowedRange && !(allowedSpecialCharacters || chars) {
-			runeName[characterIndexInWord] = []rune("")[0]
+func cleanupString(name string, mapper func(r rune) bool) string {
+	mapperFunction := func(r rune) rune {
+		if mapper(r) {
+			return r
 		}
+		return -1
 	}
-	return string(runeName)
+
+	return strings.Map(mapperFunction, name)
+
 }
 
 func CleanupNames(schema *schema_model.GoRelSchema) {
+	nameMapper := func(r rune) bool {
+		allowedSpecialCharacters := r == UNDERSCORE || r == MINUS
+		chars := (r >= CapitalStart && r <= CapitalEnd) || (r >= LowercaseStart && r <= LowercaseEnd)
+		allowedRange := r >= CharactersStart && r <= CharactersEnd
+		if allowedRange && !(allowedSpecialCharacters || chars) {
+			return false
+		}
+		return true
+	}
+
+	typeMapper := func(r rune) bool {
+		allowedSpecialCharacters := r == UNDERSCORE || r == MINUS || r == QuestionMark || r == SquareBracketOpening || r == SquareBracketClosing
+		chars := (r >= CapitalStart && r <= CapitalEnd) || (r >= LowercaseStart && r <= LowercaseEnd)
+		allowedRange := r >= CharactersStart && r <= CharactersEnd
+		if allowedRange && !(allowedSpecialCharacters || chars) {
+			return false
+		}
+		return true
+	}
+
 	for index, enum := range schema.Enums {
 		if checkNameForSpecialCharacter(enum.Name) {
-			schema.Enums[index].Name = cleanupName(enum.Name)
+			schema.Enums[index].Name = cleanupString(enum.Name, nameMapper)
+		}
+		for valueIndex, value := range enum.Values {
+			if checkNameForSpecialCharacter(value) {
+				schema.Enums[index].Values[valueIndex] = cleanupString(value, nameMapper)
+			}
 		}
 	}
 	for index, model := range schema.Models {
 		if checkNameForSpecialCharacter(model.Name) {
-			schema.Models[index].Name = cleanupName(model.Name)
+			schema.Models[index].Name = cleanupString(model.Name, nameMapper)
+		}
+		for propertyIndex, property := range model.Properties {
+			if checkNameForSpecialCharacter(property.Name) {
+				schema.Models[index].Properties[propertyIndex].Name = cleanupString(property.Name, nameMapper)
+			}
+			if checkNameForSpecialCharacter(property.Type) {
+				schema.Models[index].Properties[propertyIndex].Type = cleanupString(property.Type, typeMapper)
+			}
+			if checkNameForSpecialCharacter(property.RelationField) {
+				schema.Models[index].Properties[propertyIndex].RelationField = cleanupString(property.RelationField, nameMapper)
+			}
+			if checkNameForSpecialCharacter(property.ReferenceField) {
+				schema.Models[index].Properties[propertyIndex].ReferenceField = cleanupString(property.ReferenceField, nameMapper)
+			}
 		}
 	}
 }
@@ -176,7 +223,7 @@ func validateEnums(schema schema_model.GoRelSchema) error {
 			return errors.New("enum name is empty")
 		}
 
-		if !checkNameForSpecialCharacter(enum.Name) {
+		if checkNameForSpecialCharacter(enum.Name) {
 			return errors.New(fmt.Sprintf("enum with name %s has special characters in it", enum.Name))
 		}
 
@@ -187,6 +234,9 @@ func validateEnums(schema schema_model.GoRelSchema) error {
 		for _, value := range enum.Values {
 			if value == "" {
 				return errors.New(fmt.Sprintf("enum with name %s has values with empty values", enum.Name))
+			}
+			if checkNameForSpecialCharacter(value) {
+				return errors.New(fmt.Sprintf("value %s of enum with name %s has special characters in it", value, enum.Name))
 			}
 		}
 
@@ -220,6 +270,10 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 		for _, property := range model.Properties {
 			if property.Name == "" {
 				return errors.New(fmt.Sprintf("model with name %s has property with empty name", model.Name))
+			}
+
+			if checkNameForSpecialCharacter(property.Name) {
+				return errors.New(fmt.Sprintf("property %s of model with name %s has special characters in it", property.Name, model.Name))
 			}
 
 			if property.Id {

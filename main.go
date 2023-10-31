@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoRelCli/clean"
 	"GoRelCli/generate"
 	"GoRelCli/migrate"
 	"flag"
@@ -12,6 +13,7 @@ func listAvailableCommands() {
 	fmt.Println("List of available subcommands")
 	fmt.Println("\t- migrate (runs migrations with options provided in gorel_schema.yml)")
 	fmt.Println("\t- generate (generates go structs with options provided in gorel_schema.yml)")
+	fmt.Println("\t- clean (cleans names inside gorel_schema.yml)")
 }
 
 func getFlags(args []string) (path string, output string) {
@@ -48,6 +50,10 @@ func getHandler(args []string) func() error {
 	case "generate":
 		return func() error {
 			return generate.Generate(path, output)
+		}
+	case "clean":
+		return func() error {
+			return clean.Clean(path, output)
 		}
 	default:
 		fmt.Println(fmt.Sprintf("Command with name '%s' not found", args[0]))
