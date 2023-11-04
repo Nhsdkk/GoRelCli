@@ -1,20 +1,74 @@
 package database_contoller
 
 import (
-	"GoRelCli/env_loader"
 	"GoRelCli/schema_model"
 	"database/sql"
 	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
-	"os"
-	"regexp"
 	"slices"
+)
+
+type DatabaseErrorType string
+
+const (
+	UnsupportedProviderError DatabaseErrorType = "unsupported provider error"
+	TransactionError                           = "transaction error"
+	CloseConnectionError                       = "close connection error"
+	ConnectionError                            = "connection error"
 )
 
 type databaseEnum struct {
 	Oid      int
 	TypeName string
+}
+
+type DatabaseError struct {
+	errorType DatabaseErrorType
+	text      string
+}
+
+func (e DatabaseError) Error() string {
+	return fmt.Sprintf("Error while using database: %s - %s", e.errorType, e.text)
+}
+
+type PostgresController struct {
+	db *sql.DB
+}
+
+func (p *PostgresController) dropTables() *DatabaseError {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PostgresController) dropEnums() *DatabaseError {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PostgresController) createTables() *DatabaseError {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PostgresController) createEnums() *DatabaseError {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PostgresController) RunMigrations() *DatabaseError {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PostgresController) Close() *DatabaseError {
+	if err := p.db.Close(); err != nil {
+		return &DatabaseError{
+			errorType: CloseConnectionError,
+			text:      fmt.Sprintf("Error while closing connection to postgres db."),
+		}
+	}
+	return nil
 }
 
 func generateTransaction(sqlQueries []string) string {
@@ -27,9 +81,11 @@ func generateTransaction(sqlQueries []string) string {
 }
 
 func getEnums(db *sql.DB) ([]databaseEnum, error) {
-	//select OID
-	//FROM pg_type
-	//WHERE OID = ANY (select enumtypid FROM pg_enum);
+	/*
+		select OID
+		FROM pg_type
+		WHERE OID = ANY (select enumtypid FROM pg_enum);
+	*/
 	const rawSqlString = "SELECT OID,TYPNAME FROM pg_type WHERE OID = ANY(SELECT enumtypid FROM pg_enum)"
 
 	rows, err := db.Query(rawSqlString)
@@ -80,51 +136,43 @@ func getTables(db *sql.DB) ([]string, error) {
 	return tables, nil
 }
 
-func getPostgreSQLController(url string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", url)
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
-}
-
 func checkConnection(db *sql.DB) error {
 	return db.Ping()
 }
 
-func GetController(provider schema_model.Provider, url string) (*sql.DB, error) {
-	var err error
-	var db *sql.DB
-	switch provider {
-	case schema_model.PostgreSQL:
-		isEnvFunc, err := regexp.MatchString("^env\\(\\\"\\S*\\\"\\)$", url)
-		if err != nil || !isEnvFunc {
-			db, err = getPostgreSQLController(url)
-		} else {
-			if err := env_loader.LoadEnvFile(); err != nil {
-				return nil, err
-			}
-			envVariableName := url[5 : len(url)-2]
-			urlEnv, exists := os.LookupEnv(envVariableName)
-			if !exists {
-				return nil, errors.New(fmt.Sprintf("can't find env variable with name %s", envVariableName))
-			}
-			db, err = getPostgreSQLController(urlEnv)
-		}
-	default:
-		return nil, errors.New("provider not supported")
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err := checkConnection(db); err != nil {
-		return nil, err
-	}
-	return db, nil
-
-}
+//func GetController(provider schema_model.Provider, url string) (*sql.DB, error) {
+//	var err error
+//	var db *sql.DB
+//	switch provider {
+//	case schema_model.PostgreSQL:
+//		isEnvFunc, err := regexp.MatchString("^env\\(\\\"\\S*\\\"\\)$", url)
+//		if err != nil || !isEnvFunc {
+//			db, err = getPostgreSQLController(url)
+//		} else {
+//			if err := env_loader.LoadEnvFile(); err != nil {
+//				return nil, err
+//			}
+//			envVariableName := url[5 : len(url)-2]
+//			urlEnv, exists := os.LookupEnv(envVariableName)
+//			if !exists {
+//				return nil, errors.New(fmt.Sprintf("can't find env variable with name %s", envVariableName))
+//			}
+//			db, err = getPostgreSQLController(urlEnv)
+//		}
+//	default:
+//		return nil, errors.New("provider not supported")
+//	}
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if err := checkConnection(db); err != nil {
+//		return nil, err
+//	}
+//	return db, nil
+//
+//}
 
 func generateDeleteTableSqlScriptFromDbTableName(tableName string) string {
 	//DROP TABLE User CASCADE;
@@ -341,9 +389,6 @@ func CreateTables(db *sql.DB, models []schema_model.Model, enumNames []string, m
 
 	createTablesRawSQLQuery := generateTransaction(createTableQueries)
 	createRelationsRawSQLQuery := generateTransaction(createRelationsQueries)
-
-	//fmt.Println(createTablesRawSQLQuery)
-	//fmt.Println(createRelationsRawSQLQuery)
 
 	if _, err := db.Exec(createTablesRawSQLQuery); err != nil {
 		return errors.New(fmt.Sprintf("error while creating tables:\n%s", err))

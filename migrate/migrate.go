@@ -7,7 +7,6 @@ import (
 	"GoRelCli/schema_parser"
 	"GoRelCli/validator"
 	"bufio"
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -73,11 +72,11 @@ func Migrate(args ...string) error {
 		return err
 	}
 
-	var db *sql.DB
+	var databaseController database_contoller.DatabaseControllerInterface
 
 	if err := logger.LogStep("connect to db", func() error {
-		dbClientPtr, err := database_contoller.GetController(goRelSchema.Connection.Provider, goRelSchema.Connection.Url)
-		db = dbClientPtr
+		databaseControllerInner, err := database_contoller.NewDatabaseController(goRelSchema.Connection)
+		databaseController = databaseControllerInner
 
 		if err != nil {
 			return errors.New(fmt.Sprintf("Error while connecting to the db:\n%s", err))
@@ -88,35 +87,8 @@ func Migrate(args ...string) error {
 		return err
 	}
 
-	if err := logger.LogStep("drop tables", func() error {
-		if err := database_contoller.DropTables(db); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	if err := logger.LogStep("drop enums", func() error {
-		if err := database_contoller.DropEnums(db); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	if err := logger.LogStep("create enums", func() error {
-		if err := database_contoller.CreateEnums(db, goRelSchema.Enums); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	if err := logger.LogStep("create tables", func() error {
-		if err := database_contoller.CreateTables(db, goRelSchema.Models, enumNames, modelNames); err != nil {
+	if err := logger.LogStep("run migrations", func() error {
+		if err := databaseController.RunMigrations(); err != nil {
 			return err
 		}
 		return nil
