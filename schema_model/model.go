@@ -1,7 +1,7 @@
 package schema_model
 
 import (
-	"GoRelCli/validator"
+	"GoRelCli/error_types/validation_error"
 	"fmt"
 	"strconv"
 )
@@ -39,7 +39,7 @@ func (p *Property) GetGoLangType() (goType string, isValidGoType bool) {
 	return goType, true
 }
 
-func (p *Property) ValidateDefaultValue() (value any, err *validator.ValidationError) {
+func (p *Property) ValidateDefaultValue() (value any, err *validation_error.ValidationError) {
 	typed := PropertyType(p.Type)
 
 	switch typed {
@@ -49,8 +49,8 @@ func (p *Property) ValidateDefaultValue() (value any, err *validator.ValidationE
 		}
 		val, err := strconv.ParseInt(p.Default, 10, 64)
 		if err != nil {
-			return nil, &validator.ValidationError{
-				Position: validator.ModelValidation,
+			return nil, &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     fmt.Sprintf("%s property. Can't parse default int value from \"%s\"", p.Name, p.Default),
 			}
 		}
@@ -63,8 +63,8 @@ func (p *Property) ValidateDefaultValue() (value any, err *validator.ValidationE
 	case Float:
 		val, err := strconv.ParseFloat(p.Default, 64)
 		if err != nil {
-			return nil, &validator.ValidationError{
-				Position: validator.ModelValidation,
+			return nil, &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     fmt.Sprintf("%s property. Can't parse default float value from \"%s\"", p.Name, p.Default),
 			}
 		}
@@ -72,8 +72,8 @@ func (p *Property) ValidateDefaultValue() (value any, err *validator.ValidationE
 	case Boolean:
 		val, err := strconv.ParseBool(p.Default)
 		if err != nil {
-			return nil, &validator.ValidationError{
-				Position: validator.ModelValidation,
+			return nil, &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     fmt.Sprintf("%s property. Can't parse default boolean value from \"%s\"", p.Name, p.Default),
 			}
 		}
@@ -82,13 +82,13 @@ func (p *Property) ValidateDefaultValue() (value any, err *validator.ValidationE
 		if p.Default == "now()" {
 			return nil, nil
 		}
-		return nil, &validator.ValidationError{
-			Position: validator.ModelValidation,
+		return nil, &validation_error.ValidationError{
+			Position: validation_error.ModelValidationError,
 			Text:     fmt.Sprintf("%s property. Can't use dateTime default value of type %s if it's not now()", p.Name, p.Default),
 		}
 	default:
-		return nil, &validator.ValidationError{
-			Position: validator.ModelValidation,
+		return nil, &validation_error.ValidationError{
+			Position: validation_error.ModelValidationError,
 			Text:     fmt.Sprintf("%s property. Can't use variable of type %s as default value", p.Name, typed),
 		}
 	}

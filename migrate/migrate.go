@@ -76,22 +76,18 @@ func Migrate(args ...string) error {
 
 	if err := logger.LogStep("connect to db", func() error {
 		databaseControllerInner, err := database_contoller.NewDatabaseController(goRelSchema.Connection)
-		databaseController = databaseControllerInner
-
 		if err != nil {
-			return errors.New(fmt.Sprintf("Error while connecting to the db:\n%s", err))
+			return err
 		}
-
+		databaseController = databaseControllerInner
 		return nil
 	}); err != nil {
 		return err
 	}
 
 	if err := logger.LogStep("run migrations", func() error {
-		if err := databaseController.RunMigrations(); err != nil {
-			return err
-		}
-		return nil
+		err := databaseController.RunMigrations(&goRelSchema, enumNames, modelNames)
+		return err
 	}); err != nil {
 		return err
 	}

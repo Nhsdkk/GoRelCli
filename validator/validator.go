@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"GoRelCli/error_types/validation_error"
 	"GoRelCli/schema_model"
 	"GoRelCli/schema_parser"
 	"errors"
@@ -42,23 +43,6 @@ const SquareBracketOpening = 91
 // SquareBracketClosing ASCII character index for closing square bracket
 const SquareBracketClosing = 93
 
-type ValidationErrorPosition string
-
-const (
-	ModelValidation    ValidationErrorPosition = "model validation"
-	EnumValidation                             = "enum validation"
-	RelationValidation                         = "relation validation"
-)
-
-type ValidationError struct {
-	Position ValidationErrorPosition
-	Text     string
-}
-
-func (e ValidationError) Error() string {
-	return fmt.Sprintf("error on stage %s: %s", e.Position, e.Text)
-}
-
 func checkNameForSpecialCharacter(name string) bool {
 	for _, charIndex := range name {
 		if charIndex == UNDERSCORE || charIndex == MINUS {
@@ -74,11 +58,11 @@ func checkNameForSpecialCharacter(name string) bool {
 	return false
 }
 
-func replaceSpecialCharacters(str string) string {
-	str = strings.Replace(str, "\"", "\\\"", -1)
-	str = strings.Replace(str, "'", "\\'", -1)
-	return str
-}
+//func replaceSpecialCharacters(str string) string {
+//	str = strings.Replace(str, "\"", "\\\"", -1)
+//	str = strings.Replace(str, "'", "\\'", -1)
+//	return str
+//}
 
 func cleanupString(name string, mapper func(r rune) bool) string {
 	mapperFunction := func(r rune) rune {
@@ -228,42 +212,42 @@ func validateType(property schema_model.Property, enumNames []string, modelNames
 }
 
 // TODO: Some enums can have empty values, but only if they are not used. Create function that will scan for those enums and delete them.
-func validateEnums(schema schema_model.GoRelSchema) *ValidationError {
+func validateEnums(schema schema_model.GoRelSchema) *validation_error.ValidationError {
 	for _, enum := range schema.Enums {
 		isNameEmpty := enum.Name == ""
 		hasLessThanTwoValues := len(enum.Values) < 2
 
 		if isNameEmpty {
-			return &ValidationError{
-				Position: EnumValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.EnumValidationError,
 				Text:     "There is an enum, which name is empty",
 			}
 		}
 
 		if checkNameForSpecialCharacter(enum.Name) {
-			return &ValidationError{
-				Position: EnumValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.EnumValidationError,
 				Text:     fmt.Sprintf("Enum with name %s has special characters in it. Try using \"gorel clean\" to delete these characters.", enum.Name),
 			}
 		}
 
 		if hasLessThanTwoValues {
-			return &ValidationError{
-				Position: EnumValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.EnumValidationError,
 				Text:     fmt.Sprintf("Enum with name %s has less than 2 values (%v values)", enum.Name, len(enum.Values)),
 			}
 		}
 
 		for _, value := range enum.Values {
 			if value == "" {
-				return &ValidationError{
-					Position: EnumValidation,
+				return &validation_error.ValidationError{
+					Position: validation_error.EnumValidationError,
 					Text:     fmt.Sprintf("Enum with name %s has empty values", enum.Name),
 				}
 			}
 			if checkNameForSpecialCharacter(value) {
-				return &ValidationError{
-					Position: EnumValidation,
+				return &validation_error.ValidationError{
+					Position: validation_error.EnumValidationError,
 					Text:     fmt.Sprintf("Value %s of enum with name %s has special characters in it", value, enum.Name),
 				}
 			}
@@ -274,10 +258,10 @@ func validateEnums(schema schema_model.GoRelSchema) *ValidationError {
 	return nil
 }
 
-func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNames []string) *ValidationError {
+func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNames []string) *validation_error.ValidationError {
 	if len(schema.Models) == 0 {
-		return &ValidationError{
-			Position: ModelValidation,
+		return &validation_error.ValidationError{
+			Position: validation_error.ModelValidationError,
 			Text:     "No models provided",
 		}
 	}
@@ -288,37 +272,37 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 		idFieldCount := 0
 
 		if isNameEmpty {
-			return &ValidationError{
-				Position: ModelValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     "There is a model, which name is empty",
 			}
 		}
 
 		if checkNameForSpecialCharacter(model.Name) {
-			return &ValidationError{
-				Position: ModelValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     fmt.Sprintf("Model with name \"%s\" has special characters in it. Try using \"gorel clean\" to delete these characters. ", model.Name),
 			}
 		}
 
 		if hasLessThanTwoProperties {
-			return &ValidationError{
-				Position: ModelValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     fmt.Sprintf("Model with name %s has less than 2 properties (%v properties)", model.Name, len(model.Properties)),
 			}
 		}
 
 		for _, property := range model.Properties {
 			if property.Name == "" {
-				return &ValidationError{
-					Position: ModelValidation,
+				return &validation_error.ValidationError{
+					Position: validation_error.ModelValidationError,
 					Text:     fmt.Sprintf("Model with name %s has property with empty name", model.Name),
 				}
 			}
 
 			if checkNameForSpecialCharacter(property.Name) {
-				return &ValidationError{
-					Position: ModelValidation,
+				return &validation_error.ValidationError{
+					Position: validation_error.ModelValidationError,
 					Text:     fmt.Sprintf("Property %s of model with name %s has special characters in it", property.Name, model.Name),
 				}
 			}
@@ -328,8 +312,8 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 				isEnumType := slices.Contains(enumNames, property.Type)
 
 				if isEnumType {
-					return &ValidationError{
-						Position: ModelValidation,
+					return &validation_error.ValidationError{
+						Position: validation_error.ModelValidationError,
 						Text:     fmt.Sprintf("Model with name %s has id property (%s) with enum type", model.Name, property.Name),
 					}
 				}
@@ -339,15 +323,15 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 				isArrayType := typeAsPropertyType == schema_model.StringArr || typeAsPropertyType == schema_model.IntArr || typeAsPropertyType == schema_model.BooleanArr || typeAsPropertyType == schema_model.FloatArr || typeAsPropertyType == schema_model.DateTimeArr
 
 				if isOptionalType {
-					return &ValidationError{
-						Position: ModelValidation,
+					return &validation_error.ValidationError{
+						Position: validation_error.ModelValidationError,
 						Text:     fmt.Sprintf("Model with name %s has id property (%s) with optional type", model.Name, property.Name),
 					}
 				}
 
 				if isArrayType {
-					return &ValidationError{
-						Position: ModelValidation,
+					return &validation_error.ValidationError{
+						Position: validation_error.ModelValidationError,
 						Text:     fmt.Sprintf("Model with name %s has id property (%s) with array type", model.Name, property.Name),
 					}
 				}
@@ -355,15 +339,15 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 
 			//TODO: Table can possibly have 2 id fields. Add support for that.
 			if idFieldCount > 1 {
-				return &ValidationError{
-					Position: ModelValidation,
+				return &validation_error.ValidationError{
+					Position: validation_error.ModelValidationError,
 					Text:     fmt.Sprintf("model with name %s has more than one id field", model.Name),
 				}
 			}
 
 			if isValid := validateType(property, enumNames, modelNames); !isValid {
-				return &ValidationError{
-					Position: ModelValidation,
+				return &validation_error.ValidationError{
+					Position: validation_error.ModelValidationError,
 					Text:     fmt.Sprintf("%s type in %s property (%s model) is not valid", property.Type, property.Name, model.Name),
 				}
 			}
@@ -376,8 +360,8 @@ func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNa
 		}
 
 		if idFieldCount == 0 {
-			return &ValidationError{
-				Position: ModelValidation,
+			return &validation_error.ValidationError{
+				Position: validation_error.ModelValidationError,
 				Text:     fmt.Sprintf("model with name %s does not have id field", model.Name),
 			}
 		}
@@ -411,13 +395,13 @@ func referenceFieldExists(schema schema_model.GoRelSchema, referenceModelName st
 	return false
 }
 
-func validateRelations(schema schema_model.GoRelSchema, modelNames []string) *ValidationError {
+func validateRelations(schema schema_model.GoRelSchema, modelNames []string) *validation_error.ValidationError {
 	for _, model := range schema.Models {
 		for _, property := range model.Properties {
 			if property.ReferenceField != "" && property.RelationField != "" {
 				if !referenceFieldExists(schema, property.Type, model.Name) {
-					return &ValidationError{
-						Position: RelationValidation,
+					return &validation_error.ValidationError{
+						Position: validation_error.RelationValidationError,
 						Text:     fmt.Sprintf("relations should be created for both models %s and %s", property.Type, model.Name),
 					}
 				}
