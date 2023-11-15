@@ -1,7 +1,7 @@
 package generate
 
 import (
-	schema_model2 "GoRelCli/utils/schema_model"
+	"GoRelCli/models/schema_model"
 	"errors"
 	"fmt"
 	"os"
@@ -19,8 +19,8 @@ type GoRelGeneratedFileImpl struct {
 type FileType string
 
 type ObjectUnionType struct {
-	model    schema_model2.Model
-	enum     schema_model2.Enum
+	model    schema_model.Model
+	enum     schema_model.Enum
 	fileType FileType
 }
 
@@ -129,7 +129,7 @@ func (g *GoRelGeneratedFileImpl) generateImports(referenceEnums []string, refere
 	return importString
 }
 
-func (g *GoRelGeneratedFileImpl) generateStructModel(model schema_model2.Model, enumNames []string, modelNames []string) (structString string, referenceModels []string, referenceEnums []string, err error) {
+func (g *GoRelGeneratedFileImpl) generateStructModel(model schema_model.Model, enumNames []string, modelNames []string) (structString string, referenceModels []string, referenceEnums []string, err error) {
 	structString = fmt.Sprintf("type %s struct{\n", model.Name)
 	for _, property := range model.Properties {
 		if property.RelationField != "" {
@@ -164,7 +164,7 @@ func (g *GoRelGeneratedFileImpl) generateStructModel(model schema_model2.Model, 
 	return structString, referenceModels, referenceEnums, nil
 }
 
-func (g *GoRelGeneratedFileImpl) generateEnum(enum schema_model2.Enum) string {
+func (g *GoRelGeneratedFileImpl) generateEnum(enum schema_model.Enum) string {
 	enumString := fmt.Sprintf("type %s string\n\nconst (\n", enum.Name)
 	for i, value := range enum.Values {
 		if i == 0 {

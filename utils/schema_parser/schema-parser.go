@@ -1,9 +1,9 @@
 package schema_parser
 
 import (
+	"GoRelCli/models/error_model/schema_parser_error"
+	"GoRelCli/models/schema_model"
 	"GoRelCli/utils/env_loader"
-	"GoRelCli/utils/error_types/schema_parser_error"
-	"GoRelCli/utils/schema_model"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"os"
