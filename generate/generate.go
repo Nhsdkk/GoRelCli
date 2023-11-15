@@ -1,8 +1,8 @@
 package generate
 
 import (
+	"GoRelCli/models/schema_model"
 	"GoRelCli/utils/logger"
-	"GoRelCli/utils/schema_model"
 	"GoRelCli/utils/schema_parser"
 	"GoRelCli/utils/validator"
 	"errors"

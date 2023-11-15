@@ -1,8 +1,8 @@
 package validator
 
 import (
-	"GoRelCli/utils/error_types/validation_error"
-	schema_model2 "GoRelCli/utils/schema_model"
+	"GoRelCli/models/error_model/validation_error"
+	"GoRelCli/models/schema_model"
 	"GoRelCli/utils/schema_parser"
 	"errors"
 	"fmt"
@@ -76,7 +76,7 @@ func cleanupString(name string, mapper func(r rune) bool) string {
 
 }
 
-func CleanupNames(schema *schema_model2.GoRelSchema) {
+func CleanupNames(schema *schema_model.GoRelSchema) {
 	nameMapper := func(r rune) bool {
 		allowedSpecialCharacters := r == UNDERSCORE || r == MINUS
 		chars := (r >= CapitalStart && r <= CapitalEnd) || (r >= LowercaseStart && r <= LowercaseEnd)
@@ -185,7 +185,7 @@ func CleanupNames(schema *schema_model2.GoRelSchema) {
 //	}
 //}
 
-func validateType(property schema_model2.Property, enumNames []string, modelNames []string) (isValid bool) {
+func validateType(property schema_model.Property, enumNames []string, modelNames []string) (isValid bool) {
 	referenceNames := make([]string, len(modelNames))
 
 	for index, modelName := range modelNames {
@@ -212,7 +212,7 @@ func validateType(property schema_model2.Property, enumNames []string, modelName
 }
 
 // TODO: Some enums can have empty values, but only if they are not used. Create function that will scan for those enums and delete them.
-func validateEnums(schema schema_model2.GoRelSchema) *validation_error.ValidationError {
+func validateEnums(schema schema_model.GoRelSchema) *validation_error.ValidationError {
 	for _, enum := range schema.Enums {
 		isNameEmpty := enum.Name == ""
 		hasLessThanTwoValues := len(enum.Values) < 2
@@ -258,7 +258,7 @@ func validateEnums(schema schema_model2.GoRelSchema) *validation_error.Validatio
 	return nil
 }
 
-func validateModels(schema schema_model2.GoRelSchema, enumNames []string, modelNames []string) *validation_error.ValidationError {
+func validateModels(schema schema_model.GoRelSchema, enumNames []string, modelNames []string) *validation_error.ValidationError {
 	if len(schema.Models) == 0 {
 		return &validation_error.ValidationError{
 			Position: validation_error.ModelValidationError,
@@ -318,9 +318,9 @@ func validateModels(schema schema_model2.GoRelSchema, enumNames []string, modelN
 					}
 				}
 
-				typeAsPropertyType := schema_model2.PropertyType(property.Type)
-				isOptionalType := typeAsPropertyType == schema_model2.StringNullable || typeAsPropertyType == schema_model2.IntNullable || typeAsPropertyType == schema_model2.BooleanNullable || typeAsPropertyType == schema_model2.FloatNullable || typeAsPropertyType == schema_model2.DateTimeNullable
-				isArrayType := typeAsPropertyType == schema_model2.StringArr || typeAsPropertyType == schema_model2.IntArr || typeAsPropertyType == schema_model2.BooleanArr || typeAsPropertyType == schema_model2.FloatArr || typeAsPropertyType == schema_model2.DateTimeArr
+				typeAsPropertyType := schema_model.PropertyType(property.Type)
+				isOptionalType := typeAsPropertyType == schema_model.StringNullable || typeAsPropertyType == schema_model.IntNullable || typeAsPropertyType == schema_model.BooleanNullable || typeAsPropertyType == schema_model.FloatNullable || typeAsPropertyType == schema_model.DateTimeNullable
+				isArrayType := typeAsPropertyType == schema_model.StringArr || typeAsPropertyType == schema_model.IntArr || typeAsPropertyType == schema_model.BooleanArr || typeAsPropertyType == schema_model.FloatArr || typeAsPropertyType == schema_model.DateTimeArr
 
 				if isOptionalType {
 					return &validation_error.ValidationError{
@@ -370,7 +370,7 @@ func validateModels(schema schema_model2.GoRelSchema, enumNames []string, modelN
 	return nil
 }
 
-func referenceFieldExists(schema schema_model2.GoRelSchema, referenceModelName string, relationModelName string) bool {
+func referenceFieldExists(schema schema_model.GoRelSchema, referenceModelName string, relationModelName string) bool {
 	modelIndex := -1
 
 	for index, model := range schema.Models {
@@ -395,7 +395,7 @@ func referenceFieldExists(schema schema_model2.GoRelSchema, referenceModelName s
 	return false
 }
 
-func validateRelations(schema schema_model2.GoRelSchema, modelNames []string) *validation_error.ValidationError {
+func validateRelations(schema schema_model.GoRelSchema, modelNames []string) *validation_error.ValidationError {
 	for _, model := range schema.Models {
 		for _, property := range model.Properties {
 			if property.ReferenceField != "" && property.RelationField != "" {
@@ -411,7 +411,7 @@ func validateRelations(schema schema_model2.GoRelSchema, modelNames []string) *v
 	return nil
 }
 
-func ValidateSchema(schema *schema_model2.GoRelSchema) (enumNames []string, modelNames []string, err error) {
+func ValidateSchema(schema *schema_model.GoRelSchema) (enumNames []string, modelNames []string, err error) {
 	//enumNames, modelNames = cleanupNames(schema)
 	//cleanupEnumValues(schema)
 	enumNames, modelNames = schema_parser.IndexSchema(*schema)
