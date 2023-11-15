@@ -1,8 +1,8 @@
 package database_contoller
 
 import (
-	"GoRelCli/error_types/database_error"
-	"GoRelCli/schema_model"
+	"GoRelCli/utils/error_types/database_error"
+	"GoRelCli/utils/schema_model"
 	"database/sql"
 	"fmt"
 )

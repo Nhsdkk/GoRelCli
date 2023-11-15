@@ -1,7 +1,7 @@
 package schema_model
 
 import (
-	"GoRelCli/error_types/validation_error"
+	"GoRelCli/utils/error_types/validation_error"
 	"fmt"
 	"strconv"
 )
