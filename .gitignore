@@ -1,3 +1,9 @@
-.idea/workspace.xml
-.idea/GoRelCli.iml
-.idea/vcs.xml
+#.idea/workspace.xml
+#.idea/GoRelCli.iml
+#.idea/vcs.xml
+#.idea/.gitignore
+#.idea/discord.xml
+#.idea/modules.xml
+#.idea/sqldialects.xml
+.idea
+sql_scripts

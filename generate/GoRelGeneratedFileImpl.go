@@ -1,7 +1,7 @@
 package generate
 
 import (
-	"GoRelCli/schema_model"
+	"GoRelCli/models/schema_model"
 	"errors"
 	"fmt"
 	"os"
