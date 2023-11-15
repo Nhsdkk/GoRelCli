@@ -1,0 +1,1 @@
+INSERT INTO person(email,userType) VALUES('email@gmail.com','Admin')
