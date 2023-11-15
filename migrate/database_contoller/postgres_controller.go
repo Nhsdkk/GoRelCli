@@ -1,8 +1,8 @@
 package database_contoller
 
 import (
-	"GoRelCli/error_types/database_error"
-	"GoRelCli/schema_model"
+	"GoRelCli/utils/error_types/database_error"
+	schema_model2 "GoRelCli/utils/schema_model"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -84,7 +84,7 @@ func (p *PostgresController) dropEnums() error {
 	return nil
 }
 
-func (p *PostgresController) createTables(enumNames []string, modelNames []string, models []schema_model.Model) error {
+func (p *PostgresController) createTables(enumNames []string, modelNames []string, models []schema_model2.Model) error {
 	var createTableQueries []string
 	var createRelationsQueries []string
 	for _, model := range models {
@@ -122,7 +122,7 @@ func (p *PostgresController) createTables(enumNames []string, modelNames []strin
 	return nil
 }
 
-func (p *PostgresController) createEnums(enums []schema_model.Enum) error {
+func (p *PostgresController) createEnums(enums []schema_model2.Enum) error {
 	var queries []string
 	for _, enum := range enums {
 		queries = append(queries, p.generateCreateEnumSqlScriptFromEnum(enum))
@@ -138,7 +138,7 @@ func (p *PostgresController) createEnums(enums []schema_model.Enum) error {
 	return nil
 }
 
-func (p *PostgresController) RunMigrations(schema *schema_model.GoRelSchema, enumNames []string, modelNames []string) error {
+func (p *PostgresController) RunMigrations(schema *schema_model2.GoRelSchema, enumNames []string, modelNames []string) error {
 	if err := p.dropTables(); err != nil {
 		return err
 	}
@@ -280,14 +280,14 @@ func (p *PostgresController) generateDeleteTableSqlScriptFromDbTableName(tableNa
 	return fmt.Sprintf("DROP TABLE \"%s\" CASCADE;", tableName)
 }
 
-func (p *PostgresController) generateRelationsSqlScriptFromProperty(property schema_model.Property, modelName string) string {
+func (p *PostgresController) generateRelationsSqlScriptFromProperty(property schema_model2.Property, modelName string) string {
 	//ALTER TABLE "Todo" ADD CONSTRAINT "fk_User" FOREIGN KEY ("userId") REFERENCES "User" ("id");
 	relationTableName := modelName
 	referenceTableName := property.Type
 	return fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"fk_%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\");", relationTableName, referenceTableName, property.RelationField, referenceTableName, property.ReferenceField)
 }
 
-func (p *PostgresController) addTypeProperty(sqlQuery *string, property schema_model.Property, enumNames []string) error {
+func (p *PostgresController) addTypeProperty(sqlQuery *string, property schema_model2.Property, enumNames []string) error {
 	var postgresType string
 	isEnum := slices.Contains(enumNames, property.Type) || (slices.Contains(enumNames, property.Type[0:len(property.Type)-1]) && property.Type[len(property.Type)-1:len(property.Type)] == "?")
 
@@ -324,19 +324,19 @@ func (p *PostgresController) addTypeProperty(sqlQuery *string, property schema_m
 	return nil
 }
 
-func (p *PostgresController) addIdProperty(sqlQuery *string, property schema_model.Property) {
+func (p *PostgresController) addIdProperty(sqlQuery *string, property schema_model2.Property) {
 	if property.Id {
 		*sqlQuery += " PRIMARY KEY"
 	}
 }
 
-func (p *PostgresController) addUniqueProperty(sqlQuery *string, property schema_model.Property) {
+func (p *PostgresController) addUniqueProperty(sqlQuery *string, property schema_model2.Property) {
 	if property.Unique {
 		*sqlQuery += " UNIQUE"
 	}
 }
 
-func (p *PostgresController) addDefaultProperty(sqlQuery *string, property schema_model.Property) error {
+func (p *PostgresController) addDefaultProperty(sqlQuery *string, property schema_model2.Property) error {
 	if property.Default == "uuid()" {
 		*sqlQuery += "  DEFAULT(gen_random_uuid())"
 		return nil
@@ -356,7 +356,7 @@ func (p *PostgresController) addDefaultProperty(sqlQuery *string, property schem
 	return nil
 }
 
-func (p *PostgresController) generateCreateTableWithoutRelationsSqlScriptFromModel(model schema_model.Model, enumNames []string, tableNames []string) (string, []string, error) {
+func (p *PostgresController) generateCreateTableWithoutRelationsSqlScriptFromModel(model schema_model2.Model, enumNames []string, tableNames []string) (string, []string, error) {
 
 	for index, tableName := range tableNames {
 		tableNames[index] = tableName + "[]"
@@ -405,7 +405,7 @@ func (p *PostgresController) generateDeleteEnumSqlScriptFromDbEnum(enum database
 	return fmt.Sprintf("DROP TYPE \"%s\";", enum.TypeName)
 }
 
-func (p *PostgresController) generateCreateEnumSqlScriptFromEnum(enum schema_model.Enum) string {
+func (p *PostgresController) generateCreateEnumSqlScriptFromEnum(enum schema_model2.Enum) string {
 	//CREATE TYPE UserRole AS ENUM('Admin','User');
 	rawSqlString := fmt.Sprintf("CREATE TYPE \"%s\" AS ENUM (", enum.Name)
 	for index, value := range enum.Values {

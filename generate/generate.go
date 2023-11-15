@@ -1,10 +1,10 @@
 package generate
 
 import (
-	"GoRelCli/logger"
-	"GoRelCli/schema_model"
-	"GoRelCli/schema_parser"
-	"GoRelCli/validator"
+	"GoRelCli/utils/logger"
+	"GoRelCli/utils/schema_model"
+	"GoRelCli/utils/schema_parser"
+	"GoRelCli/utils/validator"
 	"errors"
 	"fmt"
 	"os"

@@ -1,7 +1,7 @@
 package env_loader
 
 import (
-	"GoRelCli/error_types/env_loader_error"
+	"GoRelCli/utils/error_types/env_loader_error"
 	"bufio"
 	"fmt"
 	"github.com/joho/godotenv"
