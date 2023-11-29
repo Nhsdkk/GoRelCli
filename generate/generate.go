@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 func getPathArguments(args ...string) (schemaPath string, projectPath string, err error) {
@@ -114,20 +115,20 @@ func checkFolders(modelNames []string, enumNames []string, projectPath string) e
 	return nil
 }
 
-//func createFileAsync(filename string,rootPath string, c chan FileCreateResult, syncGroup *sync.WaitGroup) {
+//func createFileAsync(filename string,rootPath string, c chan file_create_result, syncGroup *sync.WaitGroup) {
 //	path := fmt.Sprintf("%s/%s.go", rootPath, filename)
-//	go func(path string, c chan FileCreateResult) {
+//	go func(path string, c chan file_create_result) {
 //		defer syncGroup.Done()
 //		file, err := createFile(path)
 //		defer func(file *os.File) {
 //			err := file.Close()
 //			if err != nil {
-//				c <- FileCreateResult{
+//				c <- file_create_result{
 //					path: "",
 //					err: nil,
 //				}
 //			}
-//			c <- FileCreateResult{
+//			c <- file_create_result{
 //				filename: filename,
 //				path:    path,
 //				err:     err,
@@ -140,7 +141,7 @@ func checkFolders(modelNames []string, enumNames []string, projectPath string) e
 //	var syncGroup sync.WaitGroup
 //	fileMapping := make(map[string]*os.File)
 //
-//	c := make(chan FileCreateResult)
+//	c := make(chan file_create_result)
 //	defer close(c)
 //
 //	for _, modelName := range modelNames {
@@ -164,6 +165,32 @@ func checkFolders(modelNames []string, enumNames []string, projectPath string) e
 //
 //	return fileMapping, nil
 //}
+
+func createFilesAsync(fileObjects []GoRelGeneratedFileInterface) error {
+	var syncGroup sync.WaitGroup
+	c := make(chan error, len(fileObjects))
+	defer close(c)
+
+	for _, fileObject := range fileObjects {
+		syncGroup.Add(1)
+		go fileObject.WriteFSAsync(c, &syncGroup)
+	}
+
+	syncGroup.Wait()
+
+	for i := 0; i < len(fileObjects); i++ {
+		select {
+		case err := <-c:
+			if err != nil {
+				return err
+			}
+		default:
+			continue
+		}
+	}
+
+	return nil
+}
 
 func createFiles(fileObjects []GoRelGeneratedFileInterface) error {
 	for _, fileObject := range fileObjects {
@@ -249,7 +276,7 @@ func Generate(args ...string) error {
 	}
 
 	if err := logger.LogStep("create files", func() error {
-		if err := createFiles(fileObjects); err != nil {
+		if err := createFilesAsync(fileObjects); err != nil {
 			return err
 		}
 		return nil

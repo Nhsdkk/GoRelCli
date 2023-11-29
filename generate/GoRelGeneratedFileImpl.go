@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 )
 
 type GoRelGeneratedFileImpl struct {
@@ -175,4 +176,14 @@ func (g *GoRelGeneratedFileImpl) generateEnum(enum schema_model.Enum) string {
 	}
 	enumString += ")"
 	return enumString
+}
+
+func (g *GoRelGeneratedFileImpl) WriteFSAsync(c chan error, syncGroup *sync.WaitGroup) {
+	defer syncGroup.Done()
+
+	if err := g.WriteFS(); err != nil {
+		c <- err
+		return
+	}
+	return
 }
