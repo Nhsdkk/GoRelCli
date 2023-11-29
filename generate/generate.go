@@ -168,18 +168,24 @@ func checkFolders(modelNames []string, enumNames []string, projectPath string) e
 
 func createFilesAsync(fileObjects []GoRelGeneratedFileInterface) error {
 	var syncGroup sync.WaitGroup
-	c := make(chan error)
+	c := make(chan error, len(fileObjects))
 	defer close(c)
 
 	for _, fileObject := range fileObjects {
 		syncGroup.Add(1)
 		go fileObject.WriteFSAsync(c, &syncGroup)
 	}
+
 	syncGroup.Wait()
 
-	for err := range c {
-		if err != nil {
-			return err
+	for i := 0; i < len(fileObjects); i++ {
+		select {
+		case err := <-c:
+			if err != nil {
+				return err
+			}
+		default:
+			continue
 		}
 	}
 
