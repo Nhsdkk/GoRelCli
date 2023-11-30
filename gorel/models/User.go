@@ -3,10 +3,10 @@ package models
 import "GoRelCli/gorel/enums"
 
 type User struct{
-	id int64
-	email string
-	username string
-	isVerified bool
-	userType enums.UserRole
-	todos []Todo
+	Id int64 `gorel:"id"`
+	Email string `gorel:"email"`
+	Username string `gorel:"username"`
+	Isverified bool `gorel:"isVerified"`
+	Usertype enums.UserRole
+ `gorel:"userType"`	Todos []Todo `gorel:"todos"`
 }

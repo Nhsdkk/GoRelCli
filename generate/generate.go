@@ -115,57 +115,6 @@ func checkFolders(modelNames []string, enumNames []string, projectPath string) e
 	return nil
 }
 
-//func createFileAsync(filename string,rootPath string, c chan file_create_result, syncGroup *sync.WaitGroup) {
-//	path := fmt.Sprintf("%s/%s.go", rootPath, filename)
-//	go func(path string, c chan file_create_result) {
-//		defer syncGroup.Done()
-//		file, err := createFile(path)
-//		defer func(file *os.File) {
-//			err := file.Close()
-//			if err != nil {
-//				c <- file_create_result{
-//					path: "",
-//					err: nil,
-//				}
-//			}
-//			c <- file_create_result{
-//				filename: filename,
-//				path:    path,
-//				err:     err,
-//			}
-//		}(file)
-//	}(path, c)
-//}
-//
-//func createFiles(modelNames []string, enumNames []string, rootPath string) (map[string]*os.File, error) {
-//	var syncGroup sync.WaitGroup
-//	fileMapping := make(map[string]*os.File)
-//
-//	c := make(chan file_create_result)
-//	defer close(c)
-//
-//	for _, modelName := range modelNames {
-//		syncGroup.Add(1)
-//		go createFileAsync(, c, &syncGroup)
-//	}
-//
-//	for _, enumName := range enumNames {
-//		syncGroup.Add(1)
-//		go createFileAsync(fmt.Sprintf("%s/%s.go", rootPath, enumName), c, &syncGroup)
-//	}
-//
-//	syncGroup.Wait()
-//
-//	for res := range c {
-//		if res.err != nil {
-//			return nil, res.err
-//		}
-//		fileMapping[] = res.filePtr
-//	}
-//
-//	return fileMapping, nil
-//}
-
 func createFilesAsync(fileObjects []GoRelGeneratedFileInterface) error {
 	var syncGroup sync.WaitGroup
 	c := make(chan error, len(fileObjects))
@@ -189,15 +138,6 @@ func createFilesAsync(fileObjects []GoRelGeneratedFileInterface) error {
 		}
 	}
 
-	return nil
-}
-
-func createFiles(fileObjects []GoRelGeneratedFileInterface) error {
-	for _, fileObject := range fileObjects {
-		if err := fileObject.WriteFS(); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

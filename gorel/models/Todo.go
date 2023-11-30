@@ -2,7 +2,7 @@ package models
 
 
 type Todo struct{
-	id string
-	title string
-	userId int64
+	Id string `gorel:"id"`
+	Title string `gorel:"title"`
+	Userid int64 `gorel:"userId"`
 }

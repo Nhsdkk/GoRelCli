@@ -4,6 +4,8 @@ import (
 	"GoRelCli/models/schema_model"
 	"errors"
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"os"
 	"path/filepath"
 	"slices"
@@ -131,6 +133,7 @@ func (g *GoRelGeneratedFileImpl) generateImports(referenceEnums []string, refere
 }
 
 func (g *GoRelGeneratedFileImpl) generateStructModel(model schema_model.Model, enumNames []string, modelNames []string) (structString string, referenceModels []string, referenceEnums []string, err error) {
+	caser := cases.Title(language.English)
 	structString = fmt.Sprintf("type %s struct{\n", model.Name)
 	for _, property := range model.Properties {
 		if property.RelationField != "" {
@@ -140,7 +143,7 @@ func (g *GoRelGeneratedFileImpl) generateStructModel(model schema_model.Model, e
 		if !isValidGoLangType {
 			if slices.Contains(enumNames, goLangType) {
 				referenceEnums = append(referenceEnums, property.Type)
-				structString += fmt.Sprintf("\t%s enums.%s\n", property.Name, goLangType)
+				structString += fmt.Sprintf("\t%s enums.%s\n `gorel:\"%s\"`", caser.String(property.Name), goLangType, property.Name)
 				continue
 			}
 
@@ -153,13 +156,13 @@ func (g *GoRelGeneratedFileImpl) generateStructModel(model schema_model.Model, e
 
 			if slices.Contains(modelNames, clearedModelName) {
 				referenceModels = append(referenceModels, property.Type)
-				structString += fmt.Sprintf("\t%s []%s\n", property.Name, clearedModelName)
+				structString += fmt.Sprintf("\t%s []%s `gorel:\"%s\"`\n", caser.String(property.Name), clearedModelName, property.Name)
 				continue
 			}
 
 			return "", nil, nil, errors.New(fmt.Sprintf("Property with name %s has wrong type %s", property.Name, property.Type))
 		}
-		structString += fmt.Sprintf("\t%s %s\n", property.Name, goLangType)
+		structString += fmt.Sprintf("\t%s %s `gorel:\"%s\"`\n", caser.String(property.Name), goLangType, property.Name)
 	}
 	structString += "}"
 	return structString, referenceModels, referenceEnums, nil
