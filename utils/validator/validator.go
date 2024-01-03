@@ -58,12 +58,6 @@ func checkNameForSpecialCharacter(name string) bool {
 	return false
 }
 
-//func replaceSpecialCharacters(str string) string {
-//	str = strings.Replace(str, "\"", "\\\"", -1)
-//	str = strings.Replace(str, "'", "\\'", -1)
-//	return str
-//}
-
 func cleanupString(name string, mapper func(r rune) bool) string {
 	mapperFunction := func(r rune) rune {
 		if mapper(r) {
@@ -186,10 +180,20 @@ func CleanupNames(schema *schema_model.GoRelSchema) {
 //}
 
 func validateType(property schema_model.Property, enumNames []string, modelNames []string) (isValid bool) {
-	referenceNames := make([]string, len(modelNames))
+	//referenceNames := make([]string, len(modelNames))
+	//
+	//for index, modelName := range modelNames {
+	//	referenceNames[index] = fmt.Sprintf("%s[]", modelName)
+	//}
 
-	for index, modelName := range modelNames {
-		referenceNames[index] = fmt.Sprintf("%s[]", modelName)
+	propertyType := property.Type
+
+	if strings.Contains(propertyType, "[]") {
+		propertyType = strings.Replace(propertyType, "[]", "", 1)
+	}
+
+	if strings.Contains(propertyType, "?") {
+		propertyType = strings.Replace(propertyType, "?", "", 1)
 	}
 
 	if isEnum := slices.Contains(enumNames, property.Type); isEnum {
@@ -200,7 +204,7 @@ func validateType(property schema_model.Property, enumNames []string, modelNames
 		return true
 	}
 
-	if isReferenceField := slices.Contains(referenceNames, property.Type); isReferenceField {
+	if isReferenceField := slices.Contains(modelNames, propertyType); isReferenceField {
 		return true
 	}
 
@@ -395,15 +399,13 @@ func referenceFieldExists(schema schema_model.GoRelSchema, referenceModelName st
 	return false
 }
 
-func validateRelations(schema schema_model.GoRelSchema, modelNames []string) *validation_error.ValidationError {
+func validateRelations(schema schema_model.GoRelSchema) *validation_error.ValidationError {
 	for _, model := range schema.Models {
 		for _, property := range model.Properties {
-			if property.ReferenceField != "" && property.RelationField != "" {
-				if !referenceFieldExists(schema, property.Type, model.Name) {
-					return &validation_error.ValidationError{
-						Position: validation_error.RelationValidationError,
-						Text:     fmt.Sprintf("relations should be created for both models %s and %s", property.Type, model.Name),
-					}
+			if property.ReferenceField != "" && property.RelationField != "" && !referenceFieldExists(schema, property.Type, model.Name) {
+				return &validation_error.ValidationError{
+					Position: validation_error.RelationValidationError,
+					Text:     fmt.Sprintf("relations should be created for both models %s and %s", property.Type, model.Name),
 				}
 			}
 		}
@@ -419,7 +421,7 @@ func ValidateSchema(schema *schema_model.GoRelSchema) (enumNames []string, model
 	if err := validateModels(*schema, enumNames, modelNames); err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("error while validating models:\n%s", err))
 	}
-	if err := validateRelations(*schema, modelNames); err != nil {
+	if err := validateRelations(*schema); err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("error while validating relations:\n%s", err))
 	}
 

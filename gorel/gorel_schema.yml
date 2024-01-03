@@ -22,6 +22,8 @@ models:
         type: UserRole
       - name: todos
         type: Todo[]
+      - name: videos
+        type: UserToVideoRelation[]
 
   - name: Todo
     properties:
@@ -37,7 +39,51 @@ models:
         type: User
         relationField: userId
         referenceField: id
+      - name: note
+        type: Note
 
+  - name: Note
+    properties:
+      - name: id
+        type: string
+        default: uuid()
+        id: true
+      - name: text
+        type: string
+      - name: todo
+        type: Todo
+        relationField: id
+        referenceField: id
+
+  - name: UserToVideoRelation
+    properties:
+      - name: id
+        type: int
+        default: autoincrement()
+        id: true
+      - name: userId
+        type: int
+      - name: videoId
+        type: int
+      - name: user
+        type: User
+        relationField: userId
+        referenceField: id
+      - name: video
+        type: Video
+        relationField: videoId
+        referenceField: id
+
+  - name: Video
+    properties:
+      - name: id
+        type: int
+        default: autoincrement()
+        id: true
+      - name: title
+        type: string
+      - name: users
+        type: UserToVideoRelation[]
 enums:
   - name: UserRole
     values:
