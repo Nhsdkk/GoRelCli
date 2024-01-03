@@ -8,11 +8,28 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"slices"
+	"strings"
 )
 
 type databaseEnum struct {
 	Oid      int
 	TypeName string
+}
+
+type relationType string
+
+const (
+	OneToOne   relationType = "OneToOne"
+	OneToMany               = "OneToMany"
+	ManyToMany              = "ManyToMany"
+)
+
+type Relation struct {
+	relationType       relationType
+	referenceModelName string
+	referenceFieldName string
+	relationModelName  string
+	relationFieldName  string
 }
 
 type PostgresController struct {
@@ -84,19 +101,92 @@ func (p *PostgresController) dropEnums() error {
 	return nil
 }
 
+func (p *PostgresController) defineRelation(relationModel schema_model.Model, models []schema_model.Model, propertyIndex int) (Relation, error) {
+	relation := Relation{
+		relationModelName: relationModel.Name,
+	}
+
+	relationType := relationModel.Properties[propertyIndex].Type
+	relationFieldName := relationModel.Properties[propertyIndex].RelationField
+	referenceFieldName := relationModel.Properties[propertyIndex].ReferenceField
+
+	relation.relationFieldName = relationFieldName
+	relation.referenceFieldName = referenceFieldName
+
+	referenceModelName := relationType
+	if strings.Contains(referenceModelName, "[]") {
+		referenceModelName = referenceModelName[0 : len(referenceModelName)-2]
+	}
+	if strings.Contains(referenceModelName, "?") {
+		referenceModelName = referenceModelName[0 : len(referenceModelName)-1]
+	}
+
+	referenceType := ""
+
+	for _, model := range models {
+		if model.Name == referenceModelName {
+			relation.referenceModelName = model.Name
+			for _, property := range model.Properties {
+				propertyType := property.Type
+				if strings.Contains(propertyType, "?") {
+					propertyType = propertyType[0 : len(propertyType)-1]
+				}
+				if strings.Contains(propertyType, "[]") {
+					propertyType = propertyType[0 : len(propertyType)-2]
+				}
+				if propertyType == relationModel.Name {
+					referenceType = property.Type
+					break
+				}
+			}
+			break
+		}
+	}
+
+	if referenceType == "" {
+		return Relation{}, database_error.DatabaseError{
+			ErrorType: database_error.SqlGenerationError,
+			Text:      "ReferenceField not found",
+		}
+	}
+
+	isReferenceTypeArray := strings.Contains(referenceType, "[]")
+	isRelationTypeArray := strings.Contains(relationType, "[]")
+
+	fmt.Println(fmt.Sprintf("Relation type: %s, reference type: %s", relationType, referenceType))
+
+	if isReferenceTypeArray && isRelationTypeArray {
+		relation.relationType = ManyToMany
+		return relation, nil
+	}
+
+	if !isReferenceTypeArray && !isRelationTypeArray {
+		relation.relationType = OneToOne
+		return relation, nil
+	}
+
+	if isReferenceTypeArray && !isRelationTypeArray {
+		relation.relationType = OneToMany
+		return relation, nil
+	}
+
+	return Relation{}, database_error.DatabaseError{
+		ErrorType: database_error.SqlGenerationError,
+		Text:      "RelationField is array type, but ReferenceField is not",
+	}
+}
+
 func (p *PostgresController) createTables(enumNames []string, modelNames []string, models []schema_model.Model) error {
 	var createTableQueries []string
 	var createRelationsQueries []string
 	for _, model := range models {
-		createTableQuery, createRelationsQueriesInner, err := p.generateCreateTableWithoutRelationsSqlScriptFromModel(model, enumNames, modelNames)
+		err := p.generateCreateTableWithoutRelationsSqlScriptFromModel(model, models, enumNames, modelNames, &createTableQueries, &createRelationsQueries)
 		if err != nil {
 			return database_error.DatabaseError{
 				ErrorType: database_error.SqlGenerationError,
 				Text:      fmt.Sprintf("Can't generate sql query for relations and tables creation: %s", err),
 			}
 		}
-		createTableQueries = append(createTableQueries, createTableQuery)
-		createRelationsQueries = append(createRelationsQueries, createRelationsQueriesInner...)
 	}
 
 	createTablesRawSQLQuery := p.generateTransaction(createTableQueries)
@@ -241,50 +331,20 @@ func (p *PostgresController) checkConnection() error {
 	return nil
 }
 
-//func GetController(provider schema_model.Provider, url string) (*sql.DB, error) {
-//	var err error
-//	var db *sql.DB
-//	switch provider {
-//	case schema_model.PostgreSQL:
-//		isEnvFunc, err := regexp.MatchString("^env\\(\\\"\\S*\\\"\\)$", url)
-//		if err != nil || !isEnvFunc {
-//			db, err = getPostgreSQLController(url)
-//		} else {
-//			if err := env_loader.LoadEnvFile(); err != nil {
-//				return nil, err
-//			}
-//			envVariableName := url[5 : len(url)-2]
-//			urlEnv, exists := os.LookupEnv(envVariableName)
-//			if !exists {
-//				return nil, error_model.New(fmt.Sprintf("can't find env variable with name %s", envVariableName))
-//			}
-//			db, err = getPostgreSQLController(urlEnv)
-//		}
-//	default:
-//		return nil, error_model.New("provider not supported")
-//	}
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	if err := checkConnection(db); err != nil {
-//		return nil, err
-//	}
-//	return db, nil
-//
-//}
-
 func (p *PostgresController) generateDeleteTableSqlScriptFromDbTableName(tableName string) string {
 	//DROP TABLE User CASCADE;
 	return fmt.Sprintf("DROP TABLE \"%s\" CASCADE;", tableName)
 }
 
-func (p *PostgresController) generateRelationsSqlScriptFromProperty(property schema_model.Property, modelName string) string {
+func (p *PostgresController) generateRelationsSqlScriptFromProperty(relation Relation) string {
 	//ALTER TABLE "Todo" ADD CONSTRAINT "fk_User" FOREIGN KEY ("userId") REFERENCES "User" ("id");
-	relationTableName := modelName
-	referenceTableName := property.Type
-	return fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"fk_%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\");", relationTableName, referenceTableName, property.RelationField, referenceTableName, property.ReferenceField)
+	relationTableName := relation.relationModelName
+	referenceTableName := relation.referenceModelName
+	fmt.Println(fmt.Sprintf("Generating relation for %s and %s with type %s", relationTableName, referenceTableName, relation.relationType))
+	if relation.relationType == OneToOne {
+		return fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"fk_%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\") DEFERRABLE INITIALLY IMMEDIATE;", relationTableName, referenceTableName, relation.relationFieldName, referenceTableName, relation.referenceFieldName)
+	}
+	return fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"fk_%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\");", relationTableName, referenceTableName, relation.relationFieldName, referenceTableName, relation.referenceFieldName)
 }
 
 func (p *PostgresController) addTypeProperty(sqlQuery *string, property schema_model.Property, enumNames []string) error {
@@ -356,16 +416,26 @@ func (p *PostgresController) addDefaultProperty(sqlQuery *string, property schem
 	return nil
 }
 
-func (p *PostgresController) generateCreateTableWithoutRelationsSqlScriptFromModel(model schema_model.Model, enumNames []string, tableNames []string) (string, []string, error) {
-
-	for index, tableName := range tableNames {
-		tableNames[index] = tableName + "[]"
-	}
-
-	var relationQueries []string
+func (p *PostgresController) generateCreateTableWithoutRelationsSqlScriptFromModel(model schema_model.Model, models []schema_model.Model, enumNames []string, tableNames []string, tableQueries *[]string, relationQueries *[]string) error {
 	rawSqlQuery := fmt.Sprintf("CREATE TABLE \"%s\" (", model.Name)
-	for _, property := range model.Properties {
-		if slices.Contains(tableNames, property.Type) {
+	for propertyIndex, property := range model.Properties {
+		if property.RelationField != "" && property.ReferenceField != "" {
+			relation, err := p.defineRelation(model, models, propertyIndex)
+			if err != nil {
+				return err
+			}
+
+			*relationQueries = append(*relationQueries, p.generateRelationsSqlScriptFromProperty(relation))
+		}
+
+		propertyType := property.Type
+		if strings.Contains(propertyType, "[]") {
+			propertyType = propertyType[0 : len(propertyType)-2]
+		}
+		if strings.Contains(propertyType, "?") {
+			propertyType = propertyType[0 : len(propertyType)-1]
+		}
+		if slices.Contains(tableNames, propertyType) {
 			continue
 		}
 
@@ -375,12 +445,12 @@ func (p *PostgresController) generateCreateTableWithoutRelationsSqlScriptFromMod
 			propertyString = fmt.Sprintf("\"%s\"", property.Name)
 
 			if err := p.addTypeProperty(&propertyString, property, enumNames); err != nil {
-				return "", nil, err
+				return err
 			}
 			p.addIdProperty(&propertyString, property)
 			p.addUniqueProperty(&propertyString, property)
 			if err := p.addDefaultProperty(&propertyString, property); err != nil {
-				return "", nil, err
+				return err
 			}
 
 			propertyString += ","
@@ -388,16 +458,11 @@ func (p *PostgresController) generateCreateTableWithoutRelationsSqlScriptFromMod
 			rawSqlQuery = rawSqlQuery + propertyString
 			continue
 		}
-
-		//fmt.Println("GENERATING RELATIONS FOR TABLE " + property.Type)
-		relationString := p.generateRelationsSqlScriptFromProperty(property, model.Name)
-		relationQueries = append(relationQueries, relationString)
-
 	}
 
 	rawSqlQuery = rawSqlQuery[:len(rawSqlQuery)-1] + ");"
-
-	return rawSqlQuery, relationQueries, nil
+	*tableQueries = append(*tableQueries, rawSqlQuery)
+	return nil
 }
 
 func (p *PostgresController) generateDeleteEnumSqlScriptFromDbEnum(enum databaseEnum) string {

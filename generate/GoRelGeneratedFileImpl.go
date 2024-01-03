@@ -172,10 +172,10 @@ func (g *GoRelGeneratedFileImpl) generateEnum(enum schema_model.Enum) string {
 	enumString := fmt.Sprintf("type %s string\n\nconst (\n", enum.Name)
 	for i, value := range enum.Values {
 		if i == 0 {
-			enumString += fmt.Sprintf("\t%s %s = \"%s\"\n", value, enum.Name, strings.ToUpper(value))
+			enumString += fmt.Sprintf("\t%s %s = \"%s\"\n", value, enum.Name, value)
 			continue
 		}
-		enumString += fmt.Sprintf("\t%s = \"%s\"\n", value, strings.ToUpper(value))
+		enumString += fmt.Sprintf("\t%s = \"%s\"\n", value, value)
 	}
 	enumString += ")"
 	return enumString

@@ -206,7 +206,7 @@ func Generate(args ...string) error {
 		return err
 	}
 
-	if err := logger.LogStep("check folders existance", func() error {
+	if err := logger.LogStep("check folders existence", func() error {
 		if err := checkFolders(modelNames, enumNames, projectPath); err != nil {
 			return err
 		}
